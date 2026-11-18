@@ -1,0 +1,15 @@
+{
+  "name": "Horror Wichteln",
+  "short_name": "Wichteln",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#120814",
+  "theme_color": "#120814",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎁</text></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}

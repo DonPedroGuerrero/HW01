@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Horror Wichteln</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#120814">
+    <style>
+        :root {
+            --bg-dark: #120814;
+            --bg-card: #1f1124;
+            --blood-red: #8b0000;
+            --accent-gold: #d4af37;
+            --text-light: #f5f0f6;
+        }
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-dark);
+            color: var(--text-light);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            height: 100vh;
+            height: 100dvh;
+            overflow: hidden;
+            background-image: radial-gradient(circle at center, #2b1235 0%, var(--bg-dark) 100%);
+        }
+
+        header {
+            width: 100%;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(212, 175, 55, 0.2);
+            flex-shrink: 0;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1rem;
+            color: var(--accent-gold);
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 10px rgba(139, 0, 0, 0.6);
+            line-height: 1.2;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .timer-display {
+            background: rgba(139, 0, 0, 0.4);
+            border: 1px solid var(--accent-gold);
+            color: var(--accent-gold);
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            font-family: monospace;
+        }
+
+        .sound-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--accent-gold);
+            color: var(--accent-gold);
+            padding: 6px 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .sound-btn:active {
+            transform: scale(0.95);
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 15px;
+            overflow: hidden;
+        }
+
+        /* Slot-Machine / Card Container */
+        .slot-container {
+            width: 100%;
+            max-width: 340px;
+            height: 240px;
+            background: var(--bg-card);
+            border: 3px solid var(--accent-gold);
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(139, 0, 0, 0.4);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 15px;
+            flex-shrink: 0;
+        }
+
+        .spin-timer-display {
+            position: absolute;
+            top: 10px;
+            background: rgba(139, 0, 0, 0.7);
+            border: 1px solid var(--accent-gold);
+            color: var(--accent-gold);
+            padding: 3px 10px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            font-family: monospace;
+            letter-spacing: 1px;
+            z-index: 10;
+        }
+
+        .card-symbol {
+            font-size: 3.5rem;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+        }
+
+        .card-title {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: var(--accent-gold);
+            margin-bottom: 8px;
+        }
+
+        .card-desc {
+            font-size: 0.9rem;
+            color: #ccc;
+            line-height: 1.3;
+        }
+
+        /* Back of card / Setup design */
+        .card-back {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #2a0808, var(--blood-red));
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            transition: opacity 0.3s ease;
+            z-index: 5;
+            padding: 12px 15px;
+            overflow-y: auto;
+        }
+
+        .card-back.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .setup-container {
+            width: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .setup-section {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(18, 8, 20, 0.4);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 8px;
+            padding: 6px 10px;
+            margin-bottom: 6px;
+        }
+
+        .timer-input-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+        }
+
+        .timer-input-container label {
+            font-size: 0.8rem;
+            color: var(--accent-gold);
+            font-weight: bold;
+        }
+
+        .timer-input-container input {
+            width: 65px;
+            padding: 4px;
+            font-size: 1rem;
+            text-align: center;
+            background: var(--bg-dark);
+            color: var(--text-light);
+            border: 2px solid var(--accent-gold);
+            border-radius: 6px;
+            outline: none;
+            user-select: auto;
+            -webkit-user-select: auto;
+        }
+
+        .cards-selection-box {
+            width: 100%;
+            background: rgba(18, 8, 20, 0.85);
+            border: 1px solid rgba(212, 175, 55, 0.5);
+            border-radius: 8px;
+            padding: 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            height: 110px;
+            overflow-y: auto;
+            text-align: left;
+        }
+
+        .cards-selection-box label {
+            font-size: 0.8rem;
+            color: #f5f0f6;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            padding: 3px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .cards-selection-box input[type="checkbox"] {
+            accent-color: var(--blood-red);
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        /* Controls Panel */
+        .controls {
+            width: 100%;
+            max-width: 340px;
+            padding: 15px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 20;
+            flex-shrink: 0;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1.05rem;
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.15s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, var(--blood-red), #500);
+            color: white;
+            border: 2px solid var(--accent-gold);
+        }
+
+        .btn-start:active:not(:disabled) {
+            transform: scale(0.97);
+        }
+
+        .btn-start:disabled {
+            opacity: 0.5;
+            border-color: #555;
+            cursor: not-allowed;
+        }
+
+        .btn-secondary {
+            background: var(--bg-card);
+            color: var(--accent-gold);
+            border: 1px solid var(--accent-gold);
+        }
+
+        .btn-secondary:active:not(:disabled) {
+            transform: scale(0.97);
+        }
+
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>🎄 Horror Wichteln<br><span style="font-size: 0.7rem; font-weight: normal; color: #ccc;">by Don Pedro Guerrero</span> 💀</h1>
+        <div class="header-right">
+            <div id="timerDisplay" class="timer-display hidden">--:--</div>
+            <button id="soundBtn" type="button" class="sound-btn">🔊 Ton</button>
+        </div>
+    </header>
+
+    <main>
+        <div class="slot-container" id="slotContainer">
+            <!-- Auswahl-Timer über der Karte während des Mischens -->
+            <div id="spinTimerDisplay" class="spin-timer-display hidden">⏱️ 10s</div>
+
+            <!-- Kartenrückseite & Setup -->
+            <div class="card-back" id="cardBack">
+                <div id="backHeaderBox" style="display: flex; flex-direction: column; align-items: center; width: 100%; justify-content: center; height: 100%;">
+                    <div id="backIcon" style="font-size: 2.5rem; margin-bottom: 2px;">🎁</div>
+                    <div id="backTitle" style="font-size: 0.95rem; font-weight: bold; color: var(--accent-gold); letter-spacing: 1px;">BEREIT?</div>
+                </div>
+                
+                <!-- Setup-Container: Nur vor Spielstart sichtbar -->
+                <div id="setupContainer" class="setup-container hidden">
+                    <div class="setup-section">
+                        <div class="timer-input-container">
+                            <label for="timerMinutes">Spieldauer (Minuten):</label>
+                            <input type="number" id="timerMinutes" value="15" min="1" max="120">
+                        </div>
+                    </div>
+
+                    <div style="font-size: 0.75rem; color: var(--accent-gold); margin-bottom: 2px; font-weight: bold; align-self: flex-start;">Aktive Karten:</div>
+                    <div class="cards-selection-box" id="cardsSelectionBox">
+                        <label><input type="checkbox" value="0" checked> ⬅️🎁 Tausche mit Links</label>
+                        <label><input type="checkbox" value="1" checked> ➡️🎁 Tausche mit Rechts</label>
+                        <label><input type="checkbox" value="2" checked> ⬅️2️⃣ Tausch 2. Nachbar links</label>
+                        <label><input type="checkbox" value="3" checked> ➡️2️⃣ Tausch 2. Nachbar rechts</label>
+                        <label><input type="checkbox" value="4" checked> ⬅️3️⃣ Tausch 3. Nachbar links</label>
+                        <label><input type="checkbox" value="5" checked> ➡️3️⃣ Tausch 3. Nachbar rechts</label>
+                        <label><input type="checkbox" value="6" checked> 🔄⬅️ 1x nach Links</label>
+                        <label><input type="checkbox" value="7" checked> 🔄➡️ 1x nach Rechts</label>
+                        <label><input type="checkbox" value="8" checked> ⏩⬅️ 2x nach Links</label>
+                        <label><input type="checkbox" value="9" checked> ⏩➡️ 2x nach Rechts</label>
+                        <label><input type="checkbox" value="10" checked> 🚀⬅️ 3x nach Links</label>
+                        <label><input type="checkbox" value="11" checked> 🚀➡️ 3x nach Rechts</label>
+                        <label><input type="checkbox" value="12" checked> 👑 Freie Auswahl!</label>
+                        <label><input type="checkbox" value="13" checked> 😈 Fluch des Krampus</label>
+                        <label><input type="checkbox" value="14" checked> 🤫 Stille Nacht</label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamischer Inhalt (Vorderseite / Walze) -->
+            <div class="card-symbol" id="cardSymbol">🎃</div>
+            <div class="card-title" id="cardTitle">Horror Wichteln</div>
+            <div class="card-desc" id="cardDesc">Drücke Start, um das Schicksal herauszufordern.</div>
+        </div>
+    </main>
+
+    <div class="controls">
+        <button id="mainBtn" type="button" class="btn btn-start">Start</button>
+        <button id="backBtn" type="button" class="btn btn-secondary hidden">Letzte Karte anzeigen</button>
+    </div>
+
+    <script>
+        const allCards = [
+            { symbol: "⬅️🎁", title: "Tausche mit Links", desc: "Tausche dein Geschenk mit der linken Person." },
+            { symbol: "➡️🎁", title: "Tausche mit Rechts", desc: "Tausche dein Geschenk mit der rechten Person." },
+            { symbol: "⬅️2️⃣", title: "Tausch 2. Nachbar links", desc: "Tausche mit dem übernächsten (2.) linken Nachbarn." },
+            { symbol: "➡️2️⃣", title: "Tausch 2. Nachbar rechts", desc: "Tausche mit dem übernächsten (2.) rechten Nachbarn." },
+            { symbol: "⬅️3️⃣", title: "Tausch 3. Nachbar links", desc: "Tausche mit dem über-übernächsten (3.) linken Nachbarn." },
+            { symbol: "➡️3️⃣", title: "Tausch 3. Nachbar rechts", desc: "Tausche mit dem über-übernächsten (3.) linken Nachbarn." },
+            { symbol: "🔄⬅️", title: "1x nach Links", desc: "Alle geben ihr Geschenk 1x nach links weiter." },
+            { symbol: "🔄➡️", title: "1x nach Rechts", desc: "Alle geben ihr Geschenk 1x nach rechts weiter." },
+            { symbol: "⏩⬅️", title: "2x nach Links", desc: "Alle geben ihr Geschenk 2x nach links weiter." },
+            { symbol: "⏩➡️", title: "2x nach Rechts", desc: "Alle geben ihr Geschenk 2x nach rechts weiter." },
+            { symbol: "🚀⬅️", title: "3x nach Links", desc: "Alle geben ihr Geschenk 3x nach links weiter." },
+            { symbol: "🚀➡️", title: "3x nach Rechts", desc: "Alle geben ihr Geschenk 3x nach rechts weiter." },
+            { symbol: "👑", title: "Freie Auswahl!", desc: "Such dir ein beliebiges Opfer am Tisch aus und tausche." },
+            { symbol: "😈", title: "Fluch des Krampus", desc: "Tausche dein Geschenk mit der Person, die dir am unheimlichsten erscheint!" },
+            { symbol: "🤫", title: "Stille Nacht", desc: "Niemand darf tauschen. Alle atmen erleichtert auf." }
+        ];
+
+        let state = 'READY'; // READY, SPINNING, STOPPING, RESULT, EXPIRED, SHOWING_LAST
+        let soundEnabled = true;
+        let spinTimeout = null;
+        let stopTimeout = null;
+        let unlockTimeout = null;
+        let startTime = 0;
+        let currentCard = null;
+        let lastCard = null;
+        let recentCardsHistory = [];
+        let audioCtx = null;
+
+        let timerInterval = null;
+        let timeLeftInSeconds = 0;
+        let gameStartedOnce = false;
+
+        let spinTimerInterval = null;
+        let spinTimeLeft = 10;
+
+        let savedMinutes = 15;
+        let savedCardStates = new Array(allCards.length).fill(true);
+
+        const mainBtn = document.getElementById('mainBtn');
+        const backBtn = document.getElementById('backBtn');
+        const soundBtn = document.getElementById('soundBtn');
+        const cardBack = document.getElementById('cardBack');
+        const backHeaderBox = document.getElementById('backHeaderBox');
+        const backIcon = document.getElementById('backIcon');
+        const backTitle = document.getElementById('backTitle');
+        const setupContainer = document.getElementById('setupContainer');
+        const cardSymbol = document.getElementById('cardSymbol');
+        const cardTitle = document.getElementById('cardTitle');
+        const cardDesc = document.getElementById('cardDesc');
+        const timerMinutesInput = document.getElementById('timerMinutes');
+        const timerDisplay = document.getElementById('timerDisplay');
+        const cardsSelectionBox = document.getElementById('cardsSelectionBox');
+        const spinTimerDisplay = document.getElementById('spinTimerDisplay');
+
+        // Beim allerersten Laden der App das Setup sofort anzeigen
+        setupContainer.classList.remove('hidden');
+        backHeaderBox.style.justifyContent = 'flex-start';
+        backTitle.style.display = 'block';
+        backIcon.style.fontSize = '1.5rem';
+
+        mainBtn.addEventListener('click', handleMainButtonClick);
+        backBtn.addEventListener('click', showLastCardAgain);
+        soundBtn.addEventListener('click', toggleSound);
+
+        function getActiveDeck() {
+            const checkboxes = cardsSelectionBox.querySelectorAll('input[type="checkbox"]');
+            let active = [];
+            checkboxes.forEach((cb) => {
+                if (cb.checked) {
+                    active.push(allCards[cb.value]);
+                }
+            });
+            return active.length > 0 ? active : allCards;
+        }
+
+        function initAudio() {
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            } catch (e) {}
+        }
+
+        function playBeep(freq, type, duration) {
+            if (!soundEnabled || !audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+                gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + duration);
+            } catch(e) {}
+        }
+
+        function playExplosionSound() {
+            if (!soundEnabled || !audioCtx) return;
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(100, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 1.5);
+
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 1.5);
+
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 1.5);
+            } catch(e) {}
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            soundBtn.innerText = soundEnabled ? "🔊 Ton" : "🔇 Ton";
+        }
+
+        function clearAllSlotTimers() {
+            if (spinTimeout) { clearTimeout(spinTimeout); spinTimeout = null; }
+            if (stopTimeout) { clearTimeout(stopTimeout); stopTimeout = null; }
+            if (unlockTimeout) { clearTimeout(unlockTimeout); unlockTimeout = null; }
+            if (spinTimerInterval) { clearInterval(spinTimerInterval); spinTimerInterval = null; }
+            spinTimerDisplay.classList.add('hidden');
+        }
+
+        function handleMainButtonClick() {
+            initAudio();
+            if (state === 'READY') {
+                if (!gameStartedOnce) {
+                    savedMinutes = parseInt(timerMinutesInput.value) || 15;
+                    const checkboxes = cardsSelectionBox.querySelectorAll('input[type="checkbox"]');
+                    checkboxes.forEach((cb) => {
+                        savedCardStates[cb.value] = cb.checked;
+                    });
+
+                    timeLeftInSeconds = savedMinutes * 60;
+                    startGlobalTimer();
+                    gameStartedOnce = true;
+                    
+                    setupContainer.classList.add('hidden');
+                    backHeaderBox.style.justifyContent = 'center';
+                    backIcon.style.fontSize = '2.5rem';
+                    backTitle.style.display = 'block';
+                    backTitle.innerText = "BEREIT?";
+                }
+                startSpinning();
+            } else if (state === 'SPINNING') {
+                stopSpinning();
+            } else if (state === 'RESULT') {
+                resetToBack();
+            } else if (state === 'SHOWING_LAST') {
+                resetToBack();
+            } else if (state === 'EXPIRED') {
+                resetToNewGame();
+            }
+        }
+
+        function startGlobalTimer() {
+            timerDisplay.classList.remove('hidden');
+            updateTimerDisplay();
+            
+            if (timerInterval) clearInterval(timerInterval);
+            
+            timerInterval = setInterval(() => {
+                if (timeLeftInSeconds > 0) {
+                    timeLeftInSeconds--;
+                    updateTimerDisplay();
+                    
+                    if (timeLeftInSeconds === 0) {
+                        clearInterval(timerInterval);
+                        timerInterval = null;
+                        triggerTimeExpired();
+                    }
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const m = Math.floor(timeLeftInSeconds / 60);
+            const s = timeLeftInSeconds % 60;
+            timerDisplay.innerText = `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+        }
+
+        function triggerTimeExpired() {
+            clearAllSlotTimers();
+            playExplosionSound();
+            state = 'EXPIRED';
+            
+            cardBack.classList.add('hidden');
+            cardSymbol.innerText = "💣";
+            cardTitle.innerText = "ZEIT ABGELAUFEN!";
+            cardDesc.innerText = "Das Wichteln ist nun leider vorbei!";
+            
+            mainBtn.innerText = "Neues Spiel";
+            mainBtn.disabled = false;
+            timerDisplay.classList.add('hidden');
+
+            if (lastCard) {
+                backBtn.classList.remove('hidden');
+            } else {
+                backBtn.classList.add('hidden');
+            }
+        }
+
+        function startSpinning() {
+            clearAllSlotTimers();
+            state = 'SPINNING';
+            startTime = Date.now();
+            cardBack.classList.add('hidden');
+            backBtn.classList.add('hidden');
+            
+            mainBtn.innerText = "Stopp!";
+            mainBtn.disabled = true;
+            unlockTimeout = setTimeout(() => {
+                if (state === 'SPINNING') {
+                    mainBtn.disabled = false;
+                }
+            }, 2000);
+
+            spinTimeLeft = 10;
+            spinTimerDisplay.innerText = `⏱️ ${spinTimeLeft}s`;
+            spinTimerDisplay.classList.remove('hidden');
+
+            spinTimerInterval = setInterval(() => {
+                spinTimeLeft--;
+                if (spinTimeLeft > 0) {
+                    spinTimerDisplay.innerText = `⏱️ ${spinTimeLeft}s`;
+                } else {
+                    clearInterval(spinTimerInterval);
+                    spinTimerInterval = null;
+                    spinTimerDisplay.classList.add('hidden');
+                    if (state === 'SPINNING') {
+                        stopSpinning();
+                    }
+                }
+            }, 1000);
+
+            const activeDeck = getActiveDeck();
+            let speed = 70;
+            function rotateSlot() {
+                if (state !== 'SPINNING') return;
+                const randomCard = activeDeck[Math.floor(Math.random() * activeDeck.length)];
+                cardSymbol.innerText = randomCard.symbol;
+                cardTitle.innerText = randomCard.title;
+                cardDesc.innerText = randomCard.desc;
+                playBeep(300, 'triangle', 0.05);
+
+                spinTimeout = setTimeout(rotateSlot, speed);
+            }
+            rotateSlot();
+        }
+
+        function stopSpinning() {
+            if (state !== 'SPINNING') return;
+            const elapsed = Date.now() - startTime;
+            if (elapsed < 2000) {
+                stopTimeout = setTimeout(stopSpinning, 2000 - elapsed);
+                return;
+            }
+
+            if (spinTimerInterval) {
+                clearInterval(spinTimerInterval);
+                spinTimerInterval = null;
+            }
+            spinTimerDisplay.classList.add('hidden');
+
+            if (spinTimeout) { clearTimeout(spinTimeout); spinTimeout = null; }
+            if (unlockTimeout) { clearTimeout(unlockTimeout); unlockTimeout = null; }
+
+            state = 'STOPPING';
+            mainBtn.disabled = true;
+            mainBtn.innerText = "Mische...";
+
+            const activeDeck = getActiveDeck();
+            let delays = [120, 200, 320, 480];
+            let step = 0;
+
+            function slowDownStep() {
+                if (state !== 'STOPPING') return;
+                if (step < delays.length) {
+                    const randomCard = activeDeck[Math.floor(Math.random() * activeDeck.length)];
+                    cardSymbol.innerText = randomCard.symbol;
+                    cardTitle.innerText = randomCard.title;
+                    cardDesc.innerText = randomCard.desc;
+                    playBeep(200 + (step * 50), 'sine', 0.08);
+                    
+                    stopTimeout = setTimeout(slowDownStep, delays[step]);
+                    step++;
+                } else {
+                    let availableCards = activeDeck.filter(card => !recentCardsHistory.includes(card.title));
+                    if (availableCards.length === 0) {
+                        availableCards = activeDeck;
+                    }
+
+                    let finalCard = availableCards[Math.floor(Math.random() * availableCards.length)];
+
+                    currentCard = finalCard;
+                    lastCard = currentCard;
+
+                    recentCardsHistory.push(currentCard.title);
+                    if (recentCardsHistory.length > 3) {
+                        recentCardsHistory.shift();
+                    }
+
+                    cardSymbol.innerText = currentCard.symbol;
+                    cardTitle.innerText = currentCard.title;
+                    cardDesc.innerText = currentCard.desc;
+
+                    playBeep(523.25, 'square', 0.15);
+                    setTimeout(() => playBeep(659.25, 'square', 0.2), 150);
+
+                    state = 'RESULT';
+                    mainBtn.innerText = "Weiter";
+                    mainBtn.disabled = false;
+                    backBtn.classList.add('hidden');
+                }
+            }
+            slowDownStep();
+        }
+
+        function resetToBack() {
+            clearAllSlotTimers();
+            cardBack.classList.remove('hidden');
+            
+            backHeaderBox.style.justifyContent = 'center';
+            backIcon.style.fontSize = '2.5rem';
+            backTitle.style.display = 'block';
+            backTitle.innerText = "BEREIT?";
+            setupContainer.classList.add('hidden');
+
+            cardSymbol.innerText = "🎃";
+            cardTitle.innerText = "Horror Wichteln";
+            cardDesc.innerText = "Drücke Start, um das Schicksal herauszufordern.";
+            mainBtn.innerText = "Start";
+            mainBtn.disabled = false;
+            
+            if (lastCard) {
+                backBtn.classList.remove('hidden');
+            } else {
+                backBtn.classList.add('hidden');
+            }
+            
+            state = 'READY';
+        }
+
+        function resetToNewGame() {
+            clearAllSlotTimers();
+            if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+            
+            gameStartedOnce = false;
+            lastCard = null;
+            currentCard = null;
+            recentCardsHistory = [];
+            
+            timerDisplay.classList.add('hidden');
+
+            setupContainer.classList.remove('hidden');
+            backHeaderBox.style.justifyContent = 'flex-start';
+            backTitle.style.display = 'block';
+            backTitle.innerText = "BEREIT?";
+            backIcon.style.fontSize = '1.5rem';
+
+            timerMinutesInput.value = savedMinutes;
+            const checkboxes = cardsSelectionBox.querySelectorAll('input[type="checkbox"]');
+            checkboxes.forEach((cb) => {
+                cb.checked = savedCardStates[cb.value];
+            });
+
+            cardBack.classList.remove('hidden');
+            cardSymbol.innerText = "🎃";
+            cardTitle.innerText = "Horror Wichteln";
+            cardDesc.innerText = "Drücke Start, um das Schicksal herauszufordern.";
+            
+            mainBtn.innerText = "Start";
+            mainBtn.disabled = false;
+            backBtn.classList.add('hidden');
+            
+            state = 'READY';
+        }
+
+        function showLastCardAgain() {
+            if (!lastCard) return;
+            const wasExpired = (state === 'EXPIRED');
+            
+            cardBack.classList.add('hidden');
+            cardSymbol.innerText = lastCard.symbol;
+            cardTitle.innerText = lastCard.title;
+            cardDesc.innerText = lastCard.desc + " (Letzte Karte)";
+            
+            mainBtn.innerText = wasExpired ? "Neues Spiel" : "Weiter";
+            mainBtn.disabled = false;
+            state = 'SHOWING_LAST';
+            backBtn.classList.add('hidden');
+        }
+
+        // Service Worker nur auf GitHub aktivieren, lokal (VS Code) automatisch deaktivieren
+        if ('serviceWorker' in navigator) {
+            if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.protocol === 'file:') {
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    for (let registration of registrations) {
+                        registration.unregister();
+                    }
+                });
+            } else {
+                navigator.serviceWorker.register('sw.js').catch(() => {});
+            }
+        }
+    </script>
+</body>
+</html>
